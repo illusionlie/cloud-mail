@@ -9,6 +9,10 @@ const aiService = {
 
 		const ai = c.env.ai;
 
+		if (!ai) {
+			return '';
+		}
+
 		try {
 			const subject = email.subject || '';
 			const text = emailUtils.formatText(email.text || '');

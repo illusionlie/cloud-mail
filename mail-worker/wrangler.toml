@@ -22,8 +22,8 @@ enabled = true
 #[[send_email]]
 #name = "email"			#CF发件, 配置后优先使用
 
-[ai]
-binding = "ai"
+#[ai]
+#binding = "ai"			#Workers AI绑定, 用于验证码提取; 不绑定不影响其他功能, 仅验证码提取不可用
 
 [assets]
 binding = "assets"		#静态资源绑定名默认不可修改
