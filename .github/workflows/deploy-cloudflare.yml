@@ -235,24 +235,37 @@ jobs:
         run: |
           echo "🛠️ Starting database initialization..."
           sleep 15
-          
+
           WORKER_URL="${CUSTOM_DOMAIN:+https://$CUSTOM_DOMAIN}"
           WORKER_URL="${WORKER_URL:-${{ steps.deploy.outputs.worker_url }}}"
-          
+
           if [ -z "$WORKER_URL" ]; then
             echo "❌ Preview URL not available. Please set CUSTOM_DOMAIN."
             exit 1
           fi
-          
+
           HTTP_CODE=$(curl -sL -w "%{http_code}" -o response.txt "$WORKER_URL/api/init/${JWT_SECRET}")
           RESPONSE_BODY=$(cat response.txt)
 
           if [ "$RESPONSE_BODY" = "success" ]; then
             echo "✅ Setup completed."
-          else
-            echo "❌ Failed. HTTP: $HTTP_CODE, Response: $RESPONSE_BODY"
-            exit 1
+            exit 0
           fi
+
+          echo "❌ Failed. HTTP: $HTTP_CODE, Response: $(echo "$RESPONSE_BODY" | head -c 200)"
+
+          if [ "$HTTP_CODE" = "403" ]; then
+            echo ""
+            echo "⚠️ Cloudflare 边缘人机质询拦截了 CI 发起的请求(数据中心 IP + curl 指纹),数据库尚未初始化。"
+            echo "⚠️ Worker 本体已部署成功,请用浏览器手动访问以下地址完成初始化(浏览器可通过质询):"
+            echo ""
+            echo "    $WORKER_URL/api/init/<你的JWT_SECRET>"
+            echo ""
+            echo "⚠️ 看到 success 字样即初始化完成,本次部署流程继续。"
+            exit 0
+          fi
+
+          exit 1
 
       - name: 🗑️ 删除运行记录 / Delete workflow runs
         uses: GitRML/delete-workflow-runs@main
